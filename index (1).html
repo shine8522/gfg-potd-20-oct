@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lexicographically Largest Array: Intuition, Code, Dry Run</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#2a2f3a;--tx:#e8eaf0;--mu:#9aa3b5;--odd:#f59e0b;--even:#38bdf8;--ok:#34d399;--bad:#f87171;--ac:#a78bfa;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+main{max-width:960px;margin:0 auto;padding:16px}
+h1{font-size:1.6rem;margin:.4em 0}h2{font-size:1.2rem;margin:0 0 .5em}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0;min-width:0}
+p{margin:.5em 0}.mu{color:var(--mu)}code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+code{background:#222733;padding:1px 5px;border-radius:5px;font-size:.9em}
+button,input{font:inherit;color:var(--tx);background:#222733;border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px}
+button{cursor:pointer}button:hover{background:#2c3342}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+input{min-width:0;width:100%}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.arr{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px;margin:10px 0;min-width:0}
+.cw{display:flex;flex-direction:column;align-items:center;min-width:46px}
+.cell{width:46px;height:46px;border-radius:10px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;transition:all .3s;background:#1d212b}
+.cell.O{border-color:var(--odd)}.cell.E{border-color:var(--even)}
+.cell.grp{background:#2a2540}.cell.cmp{box-shadow:0 0 0 3px var(--ac)}.cell.sorted{background:#12332a}
+.tag{font-size:.65rem;letter-spacing:.05em;margin-top:3px}.tag.O{color:var(--odd)}.tag.E{color:var(--even)}
+.ptr{font-size:.8rem;font-weight:700;color:var(--ac);min-height:1.3em}
+.bar{width:3px;align-self:stretch;min-height:46px;background:var(--bad);border-radius:2px;margin:0 2px}
+.cwrap{display:flex;align-items:flex-start}
+.msg{border-left:4px solid var(--ac);padding:6px 12px;background:#1d212b;border-radius:6px;margin:8px 0}
+.ok{color:var(--ok)}.no{color:var(--bad)}
+pre{margin:0;overflow-x:auto;background:#10131a;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.85rem}
+pre .l{display:block;padding:0 6px;border-radius:4px;white-space:pre}pre .l.on{background:#3b3360;color:#fff}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media(min-width:760px){.grid.two{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}}
+details{background:#1d212b;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0}summary{cursor:pointer;min-height:32px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{border-bottom:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
+.tw{overflow-x:auto}
+.fin{border:2px solid var(--ok);border-radius:10px;padding:8px 12px;margin:8px 0}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body><main>
+<h1>Lexicographically Largest Array with Even-Sum Adjacent Swaps</h1>
+<p class="mu">Swap adjacent <code>arr[i], arr[i+1]</code> only if their sum is even. Return the lexicographically largest array possible.</p>
+
+<section id="A"><h2>A. What is the goal?</h2>
+<p>A = <code>[8, 2, 9]</code>, B = <code>[7, 100, 100]</code>. Compare left to right and stop at the first difference.</p>
+<div class="row"><button id="cmpBtn">Compare next index</button><button id="cmpReset">Reset</button></div>
+<div id="cmpOut" class="msg" aria-live="polite">Press the button.</div>
+<details><summary>Question: what do we want at the earliest position?</summary><p>The biggest value we can legally get there. Then the biggest possible at position 2, and so on. Note: <em>legally</em>. That word matters.</p></details></section>
+
+<section id="B"><h2>B. Challenge the first thought</h2>
+<p>"Bring the largest element to the front." Try it on <code>[2, 9, 4, 7]</code>: click the gap between two cells to attempt a swap.</p>
+<div id="pgB"></div><div id="pgBm" class="msg" aria-live="polite">Can 9 reach index 0? Try it.</div>
+<p>9+2 and 9+4 are odd, so 9 is stuck. Value alone does not decide movement; the allowed operations do. No jumping, only adjacent swaps.</p></section>
+
+<section id="C"><h2>C. The parity rule</h2>
+<p>even+even = even, odd+odd = even, even+odd = odd. So two neighbours swap exactly when their parities match.</p>
+<div class="row"><label>a <input id="pa" type="number" value="3" aria-label="First number"></label><label>b <input id="pb" type="number" value="5" aria-label="Second number"></label></div>
+<div id="pOut" class="msg" aria-live="polite"></div></section>
+
+<section id="D"><h2>D. The boundary invariant</h2>
+<p>On <code>[3, 1, 5, 2, 4]</code> the red bar sits between 5 and 2 (sum 7, odd). Click gaps to swap.</p>
+<div id="pgD"></div><div id="pgDm" class="msg" aria-live="polite"></div>
+<ol><li>Same parity, adjacent: swap directly.</li><li>Same parity, separated by same-parity elements: become adjacent after legal swaps.</li><li>Opposite parity: never swap, so never cross. Every swap preserves the ODD/EVEN pattern, so maximal same-parity groups keep fixed positions.</li></ol></section>
+
+<section id="E"><h2>E. Best arrangement inside a group</h2>
+<p>Group <code>[3, 1, 5]</code> arrangements: <code>[5,3,1]</code> beats <code>[1,5,3]</code> and <code>[3,1,5]</code>. The earliest slot gets the group's largest, the next slot the largest remaining, and so on, which is descending order.</p>
+<div class="fin"><code>[3,1,5 | 2,4]</code> → <code>[5,3,1 | 4,2]</code> = <code>[5, 3, 1, 4, 2]</code></div>
+<p>Groups cannot trade elements, so each group must be maximized in its own positions. The first differing index in any other arrangement holds a smaller value, so by the definition of lexicographic order it loses.</p></section>
+
+<section id="F"><h2>F. Pointer algorithm, line by line</h2>
+<pre aria-label="C++ solution"><code>vector&lt;int&gt; lexicographicallyLargest(vector&lt;int&gt; &amp;arr) {
+        // code here
+        int n=arr.size();
+        int i=0;
+       
+        while(i&lt;n){
+             int j=i+1;
+           while(j&lt;n &amp;&amp; arr[j-1]%2==arr[j]%2){
+               j++;
+           }
+          sort(arr.begin() + i, arr.begin() + j, greater&lt;int&gt;());
+           i=j;
+        
+        }
+        return arr;
+        
+    }</code></pre>
+<details open><summary>Why each line exists</summary>
+<p><b>n</b>: the length is used in every bounds check. <b>i = 0</b>: first unprocessed index and start of the current group. <b>while (i &lt; n)</b>: every group must be handled and we must not read past the end.</p>
+<p><b>j = i + 1</b>: a group has at least the element at <code>i</code>, so the scan starts one step right.</p>
+<p><b>Inner while</b>: <code>j &lt; n</code> is first so C++ short-circuiting never evaluates <code>arr[j]</code> out of bounds. We compare neighbours <code>arr[j-1]</code> and <code>arr[j]</code>: a run where every adjacent pair matches is exactly a maximal same-parity group (parity matching is transitive, and comparing only to <code>arr[i]</code> would give the same answer but hides the "adjacent swap" meaning). When the loop stops, <code>j</code> is the first index not in the group, an exclusive end, so the group is indices <code>i..j-1</code>, i.e. <code>[i, j)</code>.</p>
+<p><b>sort</b>: <code>arr.begin()+i</code> points at index i, <code>arr.begin()+j</code> points one past the group, so the range is half-open. <code>greater&lt;int&gt;()</code> orders larger first. Sorting only this range cannot move anything across a barrier.</p>
+<p><b>i = j</b>: the next group starts exactly where this one ended, so no index is skipped or repeated. <b>return arr</b>: every group is now maximal in place.</p>
+<p><b>Negatives:</b> the code above is exact for non-negative inputs. In C++ <code>-3 % 2 == -1</code> but <code>3 % 2 == 1</code>, both odd, so if negatives are allowed, change the condition to <code>((arr[j-1]%2)+2)%2 == ((arr[j]%2)+2)%2</code>. The dry run below uses this normalized parity, so it matches your code on non-negative input and stays correct on negatives.</p></details></section>
+
+<section id="G"><h2>G. Dry run</h2>
+<div class="row"><button id="bPrev">Previous</button><button id="bPlay">Play</button><button id="bNext">Next</button><button id="bReset">Reset</button>
+<label>Speed <input id="spd" type="range" min="200" max="2000" step="100" value="1000" aria-label="Animation delay in milliseconds"></label></div>
+<div class="row"><input id="cin" value="3, 1, 5, 2, 4" aria-label="Custom array, comma separated" style="flex:1 1 200px"><button id="bRun">Run custom input</button></div>
+<div id="err" class="no" role="alert"></div>
+<div class="row" id="presets" aria-label="Presets"></div>
+<div id="dry" class="arr"></div>
+<div class="grid two"><div>
+<div class="msg" aria-live="polite"><b id="dMsg"></b><br><span class="mu" id="dWhy"></span></div>
+<p>Comparing: <b id="dCmp">none</b> · Group <code>[i, j)</code>: <b id="dGrp">none</b> · Step <span id="dStep"></span></p>
+<div id="dDone"></div></div><pre id="dCode"></pre></div></section>
+
+<section id="I"><h2>I. Proof you can say aloud</h2>
+<p><b>Feasibility.</b> The only move is an adjacent swap, forbidden for opposite parity, so opposite-parity elements never cross and group positions are fixed.</p>
+<p><b>Group optimality.</b> Inside a same-parity group every adjacent swap is legal, so (like bubble sort) every permutation is reachable. Descending order is the lexicographically largest permutation.</p>
+<p><b>Global optimality.</b> Groups cannot exchange elements, so the array is lexicographically largest when each group is largest in its own slots.</p></section>
+
+<section id="J"><h2>J. Complexity</h2>
+<p>Scanning is <code>O(n)</code>. Sorting costs <code>O(k₁log k₁ + … + kₘlog kₘ)</code> for group sizes kᵢ summing to n, so worst case <code>O(n log n)</code> (one big group). All singletons: <code>O(n)</code>. Auxiliary space is typically <code>O(log n)</code> for <code>std::sort</code>'s recursion, not counting the input/output array.</p></section>
+
+<section id="K"><h2>K. Common mistakes</h2>
+<div class="row"><button id="mistakeBtn">Show "sort whole array" vs correct on current input</button></div>
+<div id="mOut" class="msg" aria-live="polite"></div>
+<div class="tw"><table><tr><th>Mistake</th><th>Why it fails</th><th>Fix</th></tr>
+<tr><td>Sort whole array</td><td>Moves elements across parity barriers</td><td>Sort each group only</td></tr>
+<tr><td><code>arr.end() + j</code></td><td>Past-the-end iterator plus offset is invalid</td><td><code>arr.begin() + j</code></td></tr>
+<tr><td>Ascending sort</td><td>Smallest ends up at the earliest slot</td><td><code>greater&lt;int&gt;()</code></td></tr>
+<tr><td><code>i++</code> in the inner loop</td><td>Shifts the group start, breaking <code>[i, j)</code></td><td>Only <code>j</code> moves inside</td></tr>
+<tr><td>Forgetting <code>i = j</code></td><td>Same group forever, infinite loop</td><td><code>i = j</code> after sorting</td></tr>
+<tr><td><code>arr[j]</code> before <code>j &lt; n</code></td><td>Out-of-bounds read</td><td>Bounds check first</td></tr>
+<tr><td>Whole array freely rearrangeable</td><td>Odd and even never swap, so never cross</td><td>Think in groups</td></tr>
+<tr><td>Any two same-parity swap directly</td><td>Only adjacent swaps exist; rearranging happens through a sequence of them inside a contiguous group</td><td>Group must be contiguous</td></tr></table></div></section>
+
+<section id="L"><h2>L. Interview practice</h2>
+<details><summary>1. Why can't an even element move left past an odd one, even from several positions away?</summary><p><b>Hint:</b> what must happen physically to cross? <b>Answer:</b> Crossing needs an adjacent swap of that even and that odd at some moment, and their sum is odd, so it is forbidden.</p></details>
+<details><summary>2. Why is descending order optimal inside a group?</summary><p><b>Hint:</b> look at the first slot. <b>Answer:</b> Lexicographic order is decided at the first difference, so the first slot must hold the group's maximum, then the second slot the max of the rest, which is descending.</p></details>
+<details><summary>3. Why is j an exclusive endpoint after the inner loop?</summary><p><b>Hint:</b> why did the loop stop? <b>Answer:</b> It stops when <code>j == n</code> or <code>arr[j]</code> breaks the parity chain, so <code>arr[j]</code> is not in the group; the group is <code>i..j-1</code>, i.e. <code>[i, j)</code>.</p></details>
+<p><b>Recap:</b> Goal → swap restriction → parity invariant → fixed groups → descending order → two pointers → correctness proof.</p></section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const par=x=>((x%2)+2)%2;
+function cellsHTML(arr,o){o=o||{};let h='<div class="cwrap">';arr.forEach((v,k)=>{
+ if(k>0&&par(arr[k-1])!==par(v))h+='<span class="bar" title="parity barrier"></span>';
+ const p=par(v)?'O':'E',c=['cell',p];
+ if(o.grp&&k>=o.grp[0]&&k<o.grp[1])c.push('grp');
+ if(o.cmp&&o.cmp.includes(k))c.push('cmp');
+ if(o.sorted&&k>=o.sorted[0]&&k<o.sorted[1])c.push('sorted');
+ let pt='';if(o.i===k)pt+='i';if(o.j===k)pt+=(pt?',':'')+'j';
+ h+=`<div class="cw"><div class="cell ${c.slice(1).join(' ')}">${v}</div><div class="tag ${p}">${p==='O'?'ODD':'EVEN'}</div><div class="ptr">${pt||'&nbsp;'}</div></div>`;});
+ return h+'</div>';}
+/* A: lexicographic compare */
+let ci=0;const A=[8,2,9],B=[7,100,100];
+$('cmpBtn').onclick=()=>{if(ci>=3){return}
+ const a=A[ci],b=B[ci];
+ if(a!==b){$('cmpOut').textContent=`Index ${ci}: ${a} vs ${b} differ, so A is larger since ${a} > ${b}. Later values do not matter.`;ci=3;}
+ else{$('cmpOut').textContent=`Index ${ci}: equal, keep going.`;ci++;}};
+$('cmpReset').onclick=()=>{ci=0;$('cmpOut').textContent='Press the button.'};
+/* B, D: playgrounds */
+function playground(host,msgId,init){let a=init.slice();const m=$(msgId);
+ function draw(){let h='<div class="arr">';a.forEach((v,k)=>{
+  if(k>0)h+=`<button data-k="${k-1}" aria-label="Try swapping positions ${k-1} and ${k}" style="min-width:32px;padding:0">⇄</button>`;
+  const p=par(v)?'O':'E';
+  h+=`<div class="cw"><div class="cell ${p}">${v}</div><div class="tag ${p}">${p==='O'?'ODD':'EVEN'}</div></div>`;});
+  $(host).innerHTML=h+'</div>';
+  $(host).querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k,s=a[k]+a[k+1];
+   if(s%2===0){[a[k],a[k+1]]=[a[k+1],a[k]];m.innerHTML=`<span class="ok">Allowed:</span> ${a[k+1]} + ${a[k]} = ${s} is even (same parity). Swapped.`;draw();}
+   else m.innerHTML=`<span class="no">Forbidden:</span> ${a[k]} + ${a[k+1]} = ${s} is odd (different parity). Nothing moves.`;});}
+ draw();}
+playground('pgB','pgBm',[2,9,4,7]);playground('pgD','pgDm',[3,1,5,2,4]);
+/* C */
+function pUpd(){const a=parseInt($('pa').value,10),b=parseInt($('pb').value,10);
+ if(isNaN(a)||isNaN(b)){$('pOut').textContent='Enter two integers.';return}
+ const pa=par(a)?'ODD':'EVEN',pb=par(b)?'ODD':'EVEN',s=a+b;
+ $('pOut').innerHTML=`${a} is ${pa}, ${b} is ${pb}, sum = ${s}. Swap ${s%2===0?'<span class="ok">allowed</span>: parities match.':'<span class="no">forbidden</span>: parities differ, sum is odd.'}`;}
+$('pa').oninput=pUpd;$('pb').oninput=pUpd;pUpd();
+/* Algorithm trace: immutable snapshots */
+const LINES=['int n=arr.size(); int i=0;','while(i<n){','  int j=i+1;','  while(j<n && arr[j-1]%2==arr[j]%2){','    j++; }','  sort(arr.begin() + i, arr.begin() + j, greater<int>());','  i=j; }','return arr;'];
+function makeTrace(input){const arr=input.slice(),n=arr.length,S=[];
+ const push=o=>S.push(Object.assign({arr:arr.slice(),i:null,j:null,cmp:null,grp:null,sorted:null,line:0,msg:'',why:'',done:false},o));
+ push({line:0,msg:`Start with n = ${n}, i = 0.`,why:'We will process the array one same-parity group at a time.'});
+ let i=0;
+ while(i<n){push({line:1,i,msg:`i = ${i} < n, so a group starts here.`,why:'i is the first unprocessed index and the start of the current group.'});
+  let j=i+1;push({line:2,i,j,grp:[i,j],msg:`j = i + 1 = ${j}. The group so far is just index ${i}.`,why:'A group has at least one element; j starts at the next index to compare with its neighbour.'});
+  for(;;){
+   if(j>=n){push({line:3,i,j,grp:[i,j],msg:`j = ${j} = n, so the bounds check fails and the loop stops.`,why:'Checking j < n first means arr[j] is never read out of bounds.'});break}
+   const same=par(arr[j-1])===par(arr[j]);
+   push({line:3,i,j,cmp:[j-1,j],grp:[i,j],msg:`Compare arr[${j-1}] = ${arr[j-1]} (${par(arr[j-1])?'ODD':'EVEN'}) with arr[${j}] = ${arr[j]} (${par(arr[j])?'ODD':'EVEN'}): ${same?'same parity.':'different parity.'}`,why:same?'Neighbours with matching parity can swap, so index j joins the group.':'A barrier: these two can never swap, so the group ends before index j.'});
+   if(!same)break;
+   j++;push({line:4,i,j,grp:[i,j],msg:`Advance j to ${j}. The group is now indices ${i}..${j-1}.`,why:'The group grows while every adjacent pair matches.'});}
+  push({line:5,i,j,grp:[i,j],msg:`Group [${i}, ${j}) = [${arr.slice(i,j).join(', ')}] goes to sort.`,why:'j is exclusive: the group is indices i through j-1.'});
+  const sub=arr.slice(i,j).sort((x,y)=>y-x);sub.forEach((v,k)=>arr[i+k]=v);
+  push({line:5,i,j,grp:[i,j],sorted:[i,j],msg:`After descending sort the group is [${sub.join(', ')}].`,why:'The largest value goes to the earliest slot, which maximizes the array lexicographically. Elements stayed inside the group.'});
+  i=j;push({line:6,i,j:null,sorted:[0,i],msg:`i = j = ${i}.`,why:'The next group starts exactly where this one ended, so no index is skipped or repeated.'});}
+ push({line:7,sorted:[0,n],done:true,msg:'i = n, so every group is processed. Return the array.',why:'Each group is maximal in its fixed positions.'});
+ return S;}
+let TR=[],ST=0,timer=null,base=[3,1,5,2,4];
+function stop(){if(timer!==null){clearInterval(timer);timer=null}$('bPlay').textContent='Play'}
+function render(){const s=TR[ST];
+ $('dry').innerHTML=s.arr.length?cellsHTML(s.arr,s):'<span class="mu">Empty array: nothing to do.</span>';
+ $('dMsg').textContent=s.msg;$('dWhy').textContent='Why: '+s.why;
+ $('dCmp').textContent=s.cmp?`arr[${s.cmp[0]}]=${s.arr[s.cmp[0]]}, arr[${s.cmp[1]}]=${s.arr[s.cmp[1]]}`:'none';
+ $('dGrp').textContent=s.grp?`[${s.grp[0]}, ${s.grp[1]})`:'none';
+ $('dStep').textContent=`${ST+1} / ${TR.length}`;
+ $('dCode').innerHTML=LINES.map((l,k)=>`<span class="l${k===s.line?' on':''}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`).join('');
+ $('dDone').innerHTML=s.done?`<div class="fin" role="status">Done. Final array: <b>[${s.arr.join(', ')}]</b></div>`:'';
+ if(s.done)stop();}
+function load(a){stop();base=a.slice();TR=makeTrace(base);ST=0;render();}
+function step(d){const n=Math.min(TR.length-1,Math.max(0,ST+d));ST=n;render()}
+$('bNext').onclick=()=>{stop();step(1)};$('bPrev').onclick=()=>{stop();step(-1)};
+$('bReset').onclick=()=>{stop();ST=0;render()};
+function play(){stop();if(ST>=TR.length-1)ST=0;$('bPlay').textContent='Pause';
+ timer=setInterval(()=>{if(ST>=TR.length-1){stop();return}step(1)},+$('spd').value);}
+$('bPlay').onclick=()=>{timer!==null?stop():play()};
+$('spd').onchange=()=>{if(timer!==null)play()};
+function parseIn(t){t=t.trim();if(!t)return[];const p=t.replace(/[\[\]]/g,'').split(/[\s,]+/).filter(Boolean);
+ if(p.length>20)throw new Error('Use at most 20 numbers.');
+ return p.map(x=>{if(!/^-?\d+$/.test(x)||Math.abs(+x)>999999)throw new Error('Invalid value: "'+x+'". Use integers only.');return +x})}
+$('bRun').onclick=()=>{try{const a=parseIn($('cin').value);$('err').textContent='';load(a)}catch(e){stop();$('err').textContent=e.message}};
+[[3,1,5,2,4],[1,3,5],[2,4,6],[2,9,4,7],[5],[4,3,2,1,6,7]].forEach(a=>{const b=document.createElement('button');b.textContent='['+a.join(', ')+']';
+ b.onclick=()=>{$('cin').value=a.join(', ');$('err').textContent='';load(a)};$('presets').appendChild(b)});
+$('mistakeBtn').onclick=()=>{const a=base.slice(),good=makeTrace(a).pop().arr,bad=a.slice().sort((x,y)=>y-x);
+ const same=good.join()===bad.join();
+ $('mOut').innerHTML=`Input [${a.join(', ')}]<br>Correct (per group): <b>[${good.join(', ')}]</b><br>Whole-array sort: <b>[${bad.join(', ')}]</b><br>${same?'Same here (e.g. one group), but try [2, 9, 4, 7].':'<span class="no">Different: whole-array sort crossed a parity barrier, which is not reachable by legal swaps.</span>'}`;};
+load(base);
+</script></body></html>
